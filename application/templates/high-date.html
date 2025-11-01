@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block title %}För högt datum - Aktuella El-priser{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="header-card">
+        <h1><i class="fas fa-calendar-times me-2"></i>För högt datum</h1>
+        <p>Hoppsan! Du har sökt på ett datum för långt fram i tiden.</p>
+    </div>
+
+    <!-- Error Content -->
+    <div class="error-container">
+        <div class="error-icon">
+            <i class="fas fa-clock"></i>
+        </div>
+        <h2>Endast en dag framåt</h2>
+        <p class="mb-4">
+            Du kan bara söka på datum upp till en dag framåt från idag. 
+            Vänligen välj ett tidigare datum och försök igen.
+        </p>
+        <a href="{{ url_for('index') }}" class="btn btn-primary">
+            <i class="fas fa-arrow-left me-1"></i> Tillbaka till startsidan
+        </a>
+    </div>
+</div>
+{% endblock %}

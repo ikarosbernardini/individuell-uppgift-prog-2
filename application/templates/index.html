@@ -1,0 +1,118 @@
+{% extends "layout.html" %}
+{% block title %}Aktuella elpriser{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="header-card">
+    <h1>
+  <img src="{{ url_for('static', filename='images/supras.png') }}" 
+       alt="favicon" 
+       style="height: 1.5em; width: auto; margin-right: 0.5rem;">
+  Dagens elpriser
+</h1>
+    <p>Här ser du aktuella elpriser och elområden i Sverige</p>
+  </div>
+
+  <!-- Rutorna SE1–SE4 -->
+  <div class="row mb-4">
+    <div class="col-md-3"><div class="card-custom"><h3>SE1 – Norra Sverige</h3><div class="price">{{ se1 if se1 is not none else '—' }} kr/kWh</div></div></div>
+    <div class="col-md-3"><div class="card-custom"><h3>SE2 – Norra Mellansverige</h3><div class="price">{{ se2 if se2 is not none else '—' }} kr/kWh</div></div></div>
+    <div class="col-md-3"><div class="card-custom"><h3>SE3 – Södra Mellansverige</h3><div class="price">{{ se3 if se3 is not none else '—' }} kr/kWh</div></div></div>
+    <div class="col-md-3"><div class="card-custom"><h3>SE4 – Södra Sverige</h3><div class="price">{{ se4 if se4 is not none else '—' }} kr/kWh</div></div></div>
+  </div>
+
+  <!-- Karta + sökfält -->
+  <h2 class="mt-4">Elområden SE1–SE4</h2>
+  <div class="map-container">
+    <div class="map-sidebar">
+      <h3>
+  <img src="{{ url_for('static', filename='images/supras.png') }}"
+       alt="favicon"
+       style="height: 1.2em; width: auto; margin-right: 0.5rem;">
+  Sök elpriser
+</h3>
+      <form action="{{ url_for('el_api') }}" method="POST">
+        <label>År</label>
+        <input type="text" name="year" placeholder="2025" required>
+        <label>Månad</label>
+        <input type="text" name="month" placeholder="11" required>
+        <label>Dag</label>
+        <input type="text" name="day" placeholder="01" required>
+        <label>Prisområde</label>
+        <select name="area" required>
+          <option value="SE1">SE1</option>
+          <option value="SE2">SE2</option>
+          <option value="SE3">SE3</option>
+          <option value="SE4">SE4</option>
+        </select>
+        <button type="submit" class="btn btn-primary mt-2">
+          <i class="fas fa-search me-1"></i> Visa priser
+        </button>
+      </form>
+    </div>
+    <div>
+      <div id="map"></div>
+      <div id="user-area"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Leaflet ikonfix
+  delete L.Icon.Default.prototype._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png"
+  });
+
+  var map = L.map('map').setView([59.3293, 18.0686], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  setTimeout(function() { map.invalidateSize(); }, 500);
+
+  var areas = [
+    {name: "SE1 – Norra Sverige", coords: [67.0, 20.0]},
+    {name: "SE2 – Norra Mellansverige", coords: [62.52, 17.45]},
+    {name: "SE3 – Södra Mellansverige", coords: [59.33, 18.06]},
+    {name: "SE4 – Södra Sverige", coords: [55.5, 13.0]}
+  ];
+  areas.forEach(function(area) {
+    L.marker(area.coords).addTo(map).bindPopup(area.name);
+  });
+
+  // Funktion för att avgöra område baserat på latitud
+  function getAreaLabel(lat) {
+    if (lat >= 64) return "SE1 – Norra Sverige";
+    if (lat >= 61) return "SE2 – Norra Mellansverige";
+    if (lat >= 57) return "SE3 – Södra Mellansverige";
+    return "SE4 – Södra Sverige";
+  }
+
+  // Geolocation
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(position) {
+      var userLat = position.coords.latitude;
+      var userLon = position.coords.longitude;
+      map.setView([userLat, userLon], 8);
+      L.marker([userLat, userLon]).addTo(map)
+        .bindPopup("<b>Din plats</b><br>Du är här!")
+        .openPopup();
+      var userArea = getAreaLabel(userLat);
+      document.getElementById("user-area").innerText =
+        "📍 Du befinner dig i elområde: " + userArea;
+    }, function() {
+      document.getElementById("user-area").innerText =
+        "Geolocation nekades eller misslyckades.";
+    });
+  } else {
+    document.getElementById("user-area").innerText =
+      "Geolocation stöds inte av din webbläsare.";
+  }
+</script>
+{% endblock %}
+
