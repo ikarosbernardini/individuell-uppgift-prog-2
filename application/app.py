@@ -80,8 +80,7 @@ def el_api():
 
     el_url = f"https://www.elprisetjustnu.se/api/v1/prices/{year}/{month}-{day}_{area}.json"
     response = requests.get(el_url)
-    if response.status_code != 200: 
-        return render_template("api-error.html"), 502 # Fel vid API-anrop
+
 
     data = response.json()
     df = pd.DataFrame(data)
