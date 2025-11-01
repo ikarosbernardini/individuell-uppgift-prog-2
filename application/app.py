@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, make_response
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
@@ -9,9 +9,10 @@ app = Flask(__name__)
 @app.route("/")
 def index():
     today = datetime.now().date()
-    year = str(today.year)
-    month = str(today.month).zfill(2)
-    day = str(today.day).zfill(2)
+    year = request.cookies.get("last_year", str(today.year))
+    month = request.cookies.get("last_month", str(today.month).zfill(2))
+    day = request.cookies.get("last_day", str(today.day).zfill(2))
+    area = request.cookies.get("last_area", "SE3") 
 
     # Hämta nu-priser för SE1–SE4
     areas = ["SE1", "SE2", "SE3", "SE4"]
@@ -38,11 +39,11 @@ def index():
     # Rendera startsidan (utan tabell)
     return render_template(
         "index.html",
-        year=year, month=month, day=day, area="–",
+        year=year, month=month, day=day, area=area,
         se1=prices_now.get("SE1"),
         se2=prices_now.get("SE2"),
         se3=prices_now.get("SE3"),
-        se4=prices_now.get("SE4"), 
+        se4=prices_now.get("SE4"),
     ) # Rendera sidan utan tabell och med live rutor
 
 
@@ -124,7 +125,7 @@ def el_api():
         else:
             prices_now[a] = None # Felhantering
 
-    return render_template(
+    resp = make_response(render_template(
         "elpriser.html",
         price=table_data,
         year=year,
@@ -136,7 +137,13 @@ def el_api():
         se3=prices_now.get("SE3"),
         se4=prices_now.get("SE4"),
         table_title=table_title
-    ) # Rendera sidan med tabell och "live" rutor
+    ))
+    # sätt cookies för senaste sökning
+    resp.set_cookie("last_year", year, max_age=60*60*24*30)   # 30 dagar
+    resp.set_cookie("last_month", month, max_age=60*60*24*30)
+    resp.set_cookie("last_day", day, max_age=60*60*24*30)
+    resp.set_cookie("last_area", area, max_age=60*60*24*30)
+    return resp # Rendera sidan med tabell och "live" rutor
 
 
 
